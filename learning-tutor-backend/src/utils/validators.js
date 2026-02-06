@@ -19,13 +19,16 @@ const MAX_HINT_LEVEL = 5;
  */
 function validateAnalyzeRequest(body) {
   const errors = [];
+  const hasQuestion = typeof body.userQuestion === 'string' && body.userQuestion.trim().length > 0;
 
-  // Check if code exists and is a string
+  // Check if code exists and is a string (required unless userQuestion is present)
   if (!body.code) {
-    errors.push('code is required');
+    if (!hasQuestion) {
+      errors.push('code is required');
+    }
   } else if (typeof body.code !== 'string') {
     errors.push('code must be a string');
-  } else if (body.code.trim().length === 0) {
+  } else if (body.code.trim().length === 0 && !hasQuestion) {
     errors.push('code cannot be empty');
   }
 

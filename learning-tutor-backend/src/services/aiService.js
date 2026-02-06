@@ -30,33 +30,46 @@ if (process.env.GROQ_API_KEY) {
 /**
  * Main analysis function
  * Analyzes code and returns educational feedback (NO code solutions!)
+ * Now includes learning state for pedagogical effectiveness
  */
-async function analyzeCode({ code, language, level, hintLevel, userQuestion }) {
+async function analyzeCode({ code, language, level, hintLevel, userQuestion, learningState }) {
   // Normalize the language
   const normalizedLang = normalizeLanguage(language);
 
+  const codeText = typeof code === 'string' ? code.trim() : '';
+  const hasCode = codeText.length > 0;
+  const hasQuestion = typeof userQuestion === 'string' && userQuestion.trim().length > 0;
+
+  // Check for simple greetings first
+  if (hasQuestion && !isCodeRelatedQuestion(userQuestion)) {
+    const greeting = buildGeneralResponse(userQuestion);
+    if (greeting) return greeting;
+  }
+
   // Detect errors using heuristics
-  const detectedErrors = detectErrors(code, normalizedLang);
+  const detectedErrors = hasCode ? detectErrors(codeText, normalizedLang) : [];
 
   // Try AI-powered analysis first, fall back to heuristics
   let aiResponse;
   if (groqClient) {
     aiResponse = await getAIAnalysis({
-      code,
+      code: codeText,
       language: normalizedLang,
       level,
       hintLevel,
       detectedErrors,
-      userQuestion
+      userQuestion,
+      learningState
     });
   } else {
     aiResponse = getFallbackAnalysis({
-      code,
+      code: codeText,
       language: normalizedLang,
       level,
       hintLevel,
       detectedErrors,
-      userQuestion
+      userQuestion,
+      learningState
     });
   }
 
@@ -66,10 +79,38 @@ async function analyzeCode({ code, language, level, hintLevel, userQuestion }) {
   };
 }
 
+function isCodeRelatedQuestion(question) {
+  const q = question.toLowerCase().trim();
+  // Only simple greetings should skip AI - everything else goes to Groq
+  const simpleGreetings = ['hi', 'hello', 'hey', 'hi!', 'hello!', 'hey!'];
+  return !simpleGreetings.includes(q);
+}
+
+function buildGeneralResponse(question) {
+  const lower = question.trim().toLowerCase();
+
+  // Only handle simple greetings locally
+  if (/^(hi|hello|hey)!?$/i.test(lower)) {
+    return {
+      mode: 'general',
+      reply: "Hey! 👋 I'm your coding mentor. What are you working on today?\n\n• Paste code and I'll explain it\n• Ask for help with a problem\n• Request hints when stuck\n\nWhat would you like to learn?",
+      explanation: '',
+      analogy: '',
+      hint: '',
+      syntax: '',
+      nextStep: ''
+    };
+  }
+
+  // Return null to let AI handle everything else
+  return null;
+}
+
 /**
  * Get AI-powered analysis from Groq
+ * Includes learning state for personalized teaching
  */
-async function getAIAnalysis({ code, language, level, hintLevel, detectedErrors, userQuestion }) {
+async function getAIAnalysis({ code, language, level, hintLevel, detectedErrors, userQuestion, learningState }) {
   try {
     const prompt = buildAnalysisPrompt({
       code,
@@ -77,10 +118,18 @@ async function getAIAnalysis({ code, language, level, hintLevel, detectedErrors,
       level,
       hintLevel,
       detectedErrors,
-      userQuestion
+      userQuestion,
+      learningState
     });
 
-    const response = await groqClient.chat.completions.create({
+    console.log('[AI Service] Calling Groq API...');
+
+    // Use Promise.race with a timeout
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Groq API timeout - 5 seconds exceeded')), 5000)
+    );
+
+    const apiPromise = groqClient.chat.completions.create({
       model: AI_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -91,36 +140,60 @@ async function getAIAnalysis({ code, language, level, hintLevel, detectedErrors,
       response_format: { type: 'json_object' }
     });
 
+    const response = await Promise.race([apiPromise, timeoutPromise]);
+
     const content = response.choices[0].message.content;
     const parsed = JSON.parse(content);
 
     // Safety check: ensure no code leaked through
     const result = sanitizeResponse(parsed);
 
+    console.log('[AI Service] Groq response successful');
     return result;
   } catch (error) {
     console.error('[AI Service] Groq error:', error.message);
+    console.log('[AI Service] Falling back to heuristic analysis');
     // Fall back to heuristic response on error
-    return getFallbackAnalysis({ code, language, level, hintLevel, detectedErrors, userQuestion });
+    return getFallbackAnalysis({ code, language, level, hintLevel, detectedErrors, userQuestion, learningState });
   }
 }
 
 /**
  * Fallback analysis when AI is not available
  * Uses detected errors to generate helpful responses
+ * Considers learning state for better pedagogical approach
  */
-function getFallbackAnalysis({ code, language, level, hintLevel, detectedErrors, userQuestion }) {
+function getFallbackAnalysis({ code, language, level, hintLevel, detectedErrors, userQuestion, learningState }) {
   // If user asked a specific question, try to address it
   if (userQuestion) {
-    return generateQuestionResponse(userQuestion, code, language, level, hintLevel);
+    const base = generateQuestionResponse(userQuestion, code, language, level, hintLevel, learningState);
+    return {
+      ...base,
+      syntax: getSyntaxGuidance('general', language),
+      nextStep: getNextStep('general', level),
+      conceptsTaught: ['general-guidance'],
+      suggestedNextConcept: 'problem-decomposition'
+    };
   }
 
   // Build response based on detected errors
   if (detectedErrors.length === 0) {
+    // Consider learning state for more personalized feedback
+    let explanation = "Your code looks structurally sound! Let's think about the logic together.";
+    if (learningState?.strugglingConcepts?.length > 0) {
+      explanation += ` Since you've been working on ${learningState.strugglingConcepts[0]}, let's make sure that part is working correctly.`;
+    } else {
+      explanation += " Consider: What should happen at each step? Are you handling all edge cases?";
+    }
+
     return {
-      explanation: "Your code looks structurally sound! Let's think about the logic together. Consider: What should happen at each step? Are you handling all edge cases?",
+      explanation,
       analogy: "Like proofreading a letter - the spelling might be correct, but does the message make sense?",
-      hint: getGenericHint(hintLevel, level)
+      hint: getGenericHint(hintLevel, level),
+      syntax: getSyntaxGuidance('general', language),
+      nextStep: getNextStep('general', level),
+      conceptsTaught: ['code-review', 'logic-analysis'],
+      suggestedNextConcept: 'edge-cases'
     };
   }
 
@@ -130,55 +203,175 @@ function getFallbackAnalysis({ code, language, level, hintLevel, detectedErrors,
   return {
     explanation: getExplanationForError(mainError, language, level),
     analogy: getAnalogyForError(mainError, level),
-    hint: getHintForError(mainError, hintLevel, level)
+    hint: getHintForError(mainError, hintLevel, level),
+    syntax: getSyntaxGuidance(mainError.type, language),
+    nextStep: getNextStep(mainError.type, level),
+    conceptsTaught: [mainError.type],
+    suggestedNextConcept: getNextConceptFromError(mainError.type)
   };
+}
+
+function getNextConceptFromError(errorType) {
+  const conceptMap = {
+    syntax: 'language-syntax-rules',
+    logic: 'debugging-techniques',
+    typo: 'code-reading-skills',
+    structure: 'program-organization'
+  };
+  return conceptMap[errorType] || 'fundamentals';
+}
+
+function getSyntaxGuidance(errorType, language) {
+  const lang = language.toLowerCase();
+  const common = {
+    general: "Review statement boundaries and required symbols for this language.",
+    syntax: "Check required punctuation and block delimiters for this construct.",
+    logic: "Syntax may be correct, but verify operators and conditions match intent.",
+    typo: "Keywords and identifiers must be spelled exactly.",
+    structure: "Confirm required program structure for this language."
+  };
+
+  const languageSpecific = {
+    python: {
+      syntax: "Python blocks require consistent indentation and a colon after statements.",
+      structure: "Functions and classes must be indented consistently under their headers."
+    },
+    c: {
+      syntax: "C statements typically end with semicolons; blocks use braces.",
+      structure: "C programs require a main entry point."
+    },
+    cpp: {
+      syntax: "C++ statements typically end with semicolons; blocks use braces.",
+      structure: "C++ programs require a main entry point."
+    },
+    java: {
+      syntax: "Java statements typically end with semicolons; blocks use braces.",
+      structure: "Java code must be inside a class; entry point is a main method."
+    }
+  };
+
+  return languageSpecific[lang]?.[errorType] || common[errorType] || common.general;
+}
+
+function getNextStep(errorType, level) {
+  const steps = {
+    general: [
+      "Trace the flow with a small example and describe each step in words.",
+      "Write down what the code should do at each step, then compare it to what it does.",
+      "Identify the first point where actual behavior diverges from expected behavior."
+    ],
+    syntax: [
+      "Find the exact line where the parser would stop and confirm the required token.",
+      "Check the line end and block delimiters around the error area.",
+      "Verify the statement format against the language's standard pattern."
+    ],
+    logic: [
+      "Pick a sample input and simulate each step, noting variable values.",
+      "Compare your intended condition with the operator you used.",
+      "List the expected output for a simple case and verify the path matches."
+    ],
+    typo: [
+      "Compare each keyword with the official spelling in the docs.",
+      "Scan for near-miss spellings of functions or variables.",
+      "Search for repeated identifiers and confirm they match exactly."
+    ],
+    structure: [
+      "List the required structural elements and check which one is missing.",
+      "Confirm the entry point signature for this language.",
+      "Ensure the code is wrapped in the required container (function/class)."
+    ]
+  };
+
+  const candidates = steps[errorType] || steps.general;
+  return candidates[Math.min(level === 'complex' ? 1 : 0, candidates.length - 1)];
 }
 
 /**
  * Generate response for user's specific question
+ * Considers learning state for personalized guidance
  */
-function generateQuestionResponse(question, code, language, level, hintLevel) {
+function generateQuestionResponse(question, code, language, level, hintLevel, learningState) {
   const lowerQ = question.toLowerCase();
 
   // Check what the user is asking about
   if (lowerQ.includes('analyze') || lowerQ.includes('issue') || lowerQ.includes('wrong')) {
-    return {
-      explanation: "Let me help you find any issues. I'll guide you through understanding what's happening in your code step by step.",
-      analogy: "Think of debugging like being a detective - we look for clues and piece together what's really happening.",
-      hint: "Start by reading your code line by line. What does each line do? Does it match what you intended?"
-    };
+    let response = "Alright, let me take a look at what's happening here. I'll walk you through this step by step.";
+    if (learningState?.previousExplanations?.length > 0) {
+      response += " Building on what we discussed before...";
+    }
+    response += " Start by reading through your code line by line - what does each line actually do? Does it match up with what you're trying to accomplish?";
+    return { reply: response };
   }
 
   if (lowerQ.includes('explain') || lowerQ.includes('what') || lowerQ.includes('does')) {
-    return {
-      explanation: "I'll help you understand what this code does. Let's break it down logically without just giving you the answer.",
-      analogy: "Understanding code is like understanding a recipe - we need to see what each step accomplishes and how they work together.",
-      hint: "Try tracing through your code mentally. What happens first? Then what? What are the values of variables at each step?"
-    };
+    let response = "Sure, let's break this down together. Instead of just telling you what it does, let me guide you through understanding it.";
+    if (learningState?.masteredConcepts?.length > 0) {
+      response += ` You already understand ${learningState.masteredConcepts[0]}, so let's build on that.`;
+    }
+    response += " Try tracing through the code mentally - what happens first? Then what? What are the values at each step?";
+    return { reply: response };
   }
 
   if (lowerQ.includes('hint')) {
-    return {
-      explanation: "I'll give you a hint to guide your thinking in the right direction.",
-      analogy: "Like a teacher giving you a nudge towards the answer rather than telling you directly.",
-      hint: getGenericHint(hintLevel, level)
-    };
+    const hints = [
+      "Here's something to think about - read your code from the top. Does each line make sense in the context of what you're trying to do?",
+      "Think about the inputs and outputs. What goes in? What should come out? Are you handling that correctly?",
+      "Consider the edge cases. What happens with empty input? Very large numbers? Unexpected values?",
+      "Try tracing through your code with a specific example. Does it actually produce what you expect?",
+      "Break the problem into smaller steps. Which step isn't quite working the way you want?"
+    ];
+    let hint = hints[Math.min(hintLevel - 1, hints.length - 1)];
+    if (learningState?.sameErrorRepeated) {
+      hint = "Let's try a different approach. " + hint + " Sometimes stepping back and thinking about the problem differently helps.";
+    }
+    return { reply: hint };
   }
 
   if (lowerQ.includes('logic')) {
-    return {
-      explanation: "Let's think about the logic of your code. What are you trying to accomplish? Does each step make sense towards that goal?",
-      analogy: "Writing code is like writing instructions for someone who follows them literally - you need to be very precise.",
-      hint: "Ask yourself: If you followed these instructions exactly as written, would you get the result you want?"
-    };
+    return { reply: "Let's think about the logic together. What are you actually trying to accomplish? Now look at your code - does each step make sense towards that goal? Sometimes it helps to write out in plain English what you want to happen, then compare that to what your code actually does." };
   }
 
-  // Default response
-  return {
-    explanation: "Great question! Let me help you understand this better. The key to learning is thinking through the problem yourself.",
-    analogy: "Learning to code is like learning to ride a bike - I can guide you, but you need to build the muscle memory yourself.",
-    hint: "Look closely at your code. What stands out to you? Trust your instincts and let's explore together."
-  };
+  // Default response - personalized based on learning state
+  let response = "Great question! Let me help you think through this. The key to really learning this is working through it yourself.";
+  if (learningState?.hintsGivenThisSession > 2) {
+    response += " I notice you've asked for a few hints already - that's totally fine! Let's approach this from a different angle.";
+  }
+  response += " What's your initial thought about what's happening here? Let's talk through it together.";
+  return { reply: response };
+}
+
+/**
+ * Build a natural conversational error response
+ */
+function buildNaturalErrorResponse(error, language, level, hintLevel) {
+  const errorType = error.type;
+
+  if (errorType === 'syntax') {
+    if (level === 'basic') {
+      return "I spotted a small grammar hiccup in your code. Just like when we write in English, programming languages have rules about certain symbols and punctuation. Take a close look at the end of your lines - are you missing anything that the language expects to see there?";
+    }
+    return "There's a syntax issue here. The parser is expecting specific tokens in certain places. Check your statement endings and block delimiters - something's not quite matching what the language expects.";
+  }
+
+  if (errorType === 'logic') {
+    if (level === 'basic') {
+      return "Your code will run, but I don't think it's doing quite what you want. It's like following a recipe but accidentally mixing up teaspoon and tablespoon - everything works, but the result isn't right. Walk through what you expect to happen, then trace what actually happens line by line.";
+    }
+    return "The logic here isn't quite matching your intent. The code will execute, but the behavior might surprise you. Think about what you're actually asking the computer to do versus what you want it to do.";
+  }
+
+  if (errorType === 'typo') {
+    return "Looks like there might be a spelling issue somewhere. Computers are super picky about exact spelling - even one letter off and they get confused. Double-check your keywords and function names against what the language actually uses.";
+  }
+
+  if (errorType === 'structure') {
+    if (level === 'basic') {
+      return "Your code is missing some important building blocks. Think of it like a house - you need a foundation before you can add the rooms! What does every program in this language need to have?";
+    }
+    return "The structure isn't complete. Most programs need certain required elements to work properly. What's the entry point for this language? Make sure you have all the necessary components.";
+  }
+
+  return "Let me help you figure out what's going on here. Take a look at your code and tell me - what do you think might be causing the issue? Let's work through this together.";
 }
 
 /**
@@ -219,7 +412,7 @@ function getExplanationForError(error, language, level) {
 /**
  * Generate analogy based on error type
  */
-function getAnalogyForError(error, level) {
+function getAnalogyForError(error) {
   const analogies = {
     syntax: "It's like forgetting a period at the end of a sentence. The reader (computer) gets confused about where one thought ends and another begins.",
     logic: "Imagine giving someone directions to your house, but accidentally telling them to turn left when you meant right. They'll follow your directions perfectly... to the wrong place!",
@@ -234,7 +427,7 @@ function getAnalogyForError(error, level) {
 /**
  * Generate progressive hints based on error and hint level
  */
-function getHintForError(error, hintLevel, level) {
+function getHintForError(error, hintLevel) {
   // Hint progressions for different error types
   const hintProgressions = {
     syntax: [
@@ -276,7 +469,7 @@ function getHintForError(error, hintLevel, level) {
 /**
  * Generic hints when no specific errors detected
  */
-function getGenericHint(hintLevel, level) {
+function getGenericHint(hintLevel) {
   const hints = [
     "Start by reading your code from the top. Does each line make sense?",
     "Think about the inputs and outputs. What goes in? What should come out?",
@@ -289,30 +482,37 @@ function getGenericHint(hintLevel, level) {
 }
 
 /**
- * Safety function to ensure no code leaks into response
- * Strips anything that looks like code blocks
+ * Safety function to ensure no COMPLETE code solutions leak into response
+ * ALLOWS: partial syntax with blanks (___), small snippets for learning
+ * BLOCKS: complete function implementations, full solutions
  */
 function sanitizeResponse(response) {
-  const codePatterns = [
-    /```[\s\S]*?```/g,      // Code blocks
-    /`[^`]+`/g,             // Inline code
-    /def \w+\(.*\):/g,      // Python function definitions
-    /function \w+\(.*\)/g,  // JS function definitions
-    /\bfor\s*\(.*;.*;.*\)/g, // For loops
-    /\bwhile\s*\(.*\)\s*\{/g // While loops with braces
-  ];
-
   let sanitized = { ...response };
 
-  for (const pattern of codePatterns) {
-    if (sanitized.explanation) {
-      sanitized.explanation = sanitized.explanation.replace(pattern, '[code removed]');
+  if (sanitized.reply) {
+    // DON'T remove code blocks - we want syntax examples!
+    // Only check if a response contains suspiciously complete code
+
+    // Patterns that indicate COMPLETE solutions (not just syntax hints)
+    const completeSolutionPatterns = [
+      // Complete function with actual logic (not blanks)
+      /def \w+\([^)]*\):\s*\n(\s+.+\n){5,}/g,  // Python function with 5+ lines
+      /function \w+\([^)]*\)\s*\{[\s\S]{200,}\}/g,  // JS function with lots of code
+      /public\s+(static\s+)?\w+\s+\w+\([^)]*\)\s*\{[\s\S]{200,}\}/g,  // Java method
+    ];
+
+    let hasCompleteSolution = false;
+    for (const pattern of completeSolutionPatterns) {
+      if (pattern.test(sanitized.reply)) {
+        hasCompleteSolution = true;
+        break;
+      }
     }
-    if (sanitized.hint) {
-      sanitized.hint = sanitized.hint.replace(pattern, '[code removed]');
-    }
-    if (sanitized.analogy) {
-      sanitized.analogy = sanitized.analogy.replace(pattern, '[code removed]');
+
+    // Only sanitize if we detect a complete solution
+    if (hasCompleteSolution) {
+      sanitized.reply = sanitized.reply.replace(/```[\s\S]*?```/g,
+        '```\n[Complete solution removed - try writing it yourself!]\n```');
     }
   }
 

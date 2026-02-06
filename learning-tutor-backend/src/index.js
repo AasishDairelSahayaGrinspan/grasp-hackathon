@@ -12,6 +12,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const analyzeRoutes = require('./routes/analyze');
+const runRoutes = require('./routes/run');
+const analyzeImageRoutes = require('./routes/analyzeImage');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -22,7 +24,16 @@ const PORT = process.env.PORT || 3001;
 
 // Enable CORS for frontend and VS Code extension
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'vscode-webview://*'],
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    }
+    if (origin.startsWith('vscode-webview://')) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type']
 }));
@@ -51,6 +62,12 @@ app.get('/health', (req, res) => {
 
 // Main analyze endpoint - the AI brain lives here
 app.use('/analyze', analyzeRoutes);
+
+// Code execution endpoint - run code safely
+app.use('/run', runRoutes);
+
+// Image analysis endpoint - problem screenshots
+app.use('/analyze-image', analyzeImageRoutes);
 
 // ============================================================
 // ERROR HANDLING
@@ -85,6 +102,7 @@ app.listen(PORT, () => {
 ║  Server running on: http://localhost:${PORT}                    ║
 ║  Health check:      http://localhost:${PORT}/health             ║
 ║  Analyze endpoint:  POST http://localhost:${PORT}/analyze       ║
+║  Run code:          POST http://localhost:${PORT}/run           ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Remember: We NEVER give complete code solutions!            ║
 ║  We help students LEARN by thinking, not copying.            ║
