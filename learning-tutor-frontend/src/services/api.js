@@ -35,6 +35,9 @@ export async function checkHealth() {
  */
 export async function analyzeCode({ code, language, level, hintLevel, userQuestion, learningState }) {
   try {
+    console.log('🔍 Making API call to:', API_BASE_URL + '/analyze');
+    console.log('📤 Request data:', { code, language, level, hintLevel, userQuestion, learningState });
+
     const response = await api.post('/analyze', {
       code,
       language,
@@ -43,12 +46,17 @@ export async function analyzeCode({ code, language, level, hintLevel, userQuesti
       userQuestion,
       learningState
     });
+
+    console.log('✅ API response:', response.data);
     return response.data;
   } catch (error) {
+    console.error('❌ API Error:', error);
     if (error.response?.data) {
+      console.error('❌ Response data:', error.response.data);
       throw new Error(error.response.data.error || 'Analysis failed');
     }
-    throw new Error('Failed to connect to tutor backend');
+    console.error('❌ Network error:', error.message);
+    throw new Error('Failed to connect to tutor backend: ' + error.message);
   }
 }
 

@@ -25,20 +25,8 @@ const PORT = process.env.PORT || 3001;
 // Enable CORS for frontend and VS Code extension
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-      return callback(null, true);
-    }
-    if (origin.startsWith('vscode-webview://')) {
-      return callback(null, true);
-    }
-    if (origin.includes('azurestaticapps.net')) {
-      return callback(null, true);
-    }
-    if (origin.includes('onrender.com')) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
+    // Allow all origins for now to debug connection issues
+    callback(null, true);
   },
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type']
