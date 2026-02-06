@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "build": "cd ../learning-tutor-frontend && npm install && npx vite build && cp -r dist ../learning-tutor-backend/frontend/",
+    "build": "cd ../learning-tutor-frontend && npm install && ./node_modules/.bin/vite build && cp -r dist ../learning-tutor-backend/frontend/",
     "postinstall": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
