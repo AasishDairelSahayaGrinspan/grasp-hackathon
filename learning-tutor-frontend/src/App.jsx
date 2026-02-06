@@ -342,6 +342,141 @@ const FEATURES = [
   }
 ];
 
+/**
+ * Render markdown content with proper code block formatting
+ * Handles ```language code``` blocks and inline `code`
+ */
+function renderMarkdown(content) {
+  if (!content) return null;
+
+  const parts = [];
+  let key = 0;
+
+  // Process code blocks first (```language\ncode```)
+  const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    // Add text before the code block
+    if (match.index > lastIndex) {
+      const textBefore = content.slice(lastIndex, match.index);
+      parts.push(...renderTextWithInlineCode(textBefore, key));
+      key += 100;
+    }
+
+    // Add the code block
+    const language = match[1] || 'plaintext';
+    const code = match[2].trim();
+    parts.push(
+      <div key={`code-${key++}`} className="code-block">
+        <div className="code-block-header">
+          <span className="code-language">{language}</span>
+        </div>
+        <pre className="code-block-content">
+          <code>{code}</code>
+        </pre>
+      </div>
+    );
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text after last code block
+  if (lastIndex < content.length) {
+    const remainingText = content.slice(lastIndex);
+    parts.push(...renderTextWithInlineCode(remainingText, key));
+  }
+
+  // If no code blocks were found, just render with inline code
+  if (parts.length === 0) {
+    return renderTextWithInlineCode(content, 0);
+  }
+
+  return parts;
+}
+
+/**
+ * Render text with inline code (`code`) and line breaks
+ */
+function renderTextWithInlineCode(text, startKey) {
+  const parts = [];
+  let key = startKey;
+
+  // Split by lines first
+  const lines = text.split('\n');
+
+  lines.forEach((line, lineIndex) => {
+    if (lineIndex > 0) {
+      // Don't add break for empty lines at the start
+      if (line.trim() || lineIndex > 0) {
+        parts.push(<br key={`br-${key++}`} />);
+      }
+    }
+
+    // Process inline code in each line
+    const inlineCodeRegex = /`([^`]+)`/g;
+    let lastIdx = 0;
+    let inlineMatch;
+
+    while ((inlineMatch = inlineCodeRegex.exec(line)) !== null) {
+      // Text before inline code
+      if (inlineMatch.index > lastIdx) {
+        parts.push(
+          <span key={`text-${key++}`}>
+            {renderBoldAndItalic(line.slice(lastIdx, inlineMatch.index))}
+          </span>
+        );
+      }
+
+      // Inline code
+      parts.push(
+        <code key={`inline-${key++}`} className="inline-code">
+          {inlineMatch[1]}
+        </code>
+      );
+
+      lastIdx = inlineMatch.index + inlineMatch[0].length;
+    }
+
+    // Remaining text after last inline code
+    if (lastIdx < line.length) {
+      parts.push(
+        <span key={`text-${key++}`}>
+          {renderBoldAndItalic(line.slice(lastIdx))}
+        </span>
+      );
+    }
+  });
+
+  return parts;
+}
+
+/**
+ * Render bold (**text**) and italic (*text*) formatting
+ */
+function renderBoldAndItalic(text) {
+  // Handle **bold**
+  const boldRegex = /\*\*([^*]+)\*\*/g;
+  const parts = [];
+  let lastIdx = 0;
+  let match;
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      parts.push(text.slice(lastIdx, match.index));
+    }
+    parts.push(<strong key={`bold-${match.index}`}>{match[1]}</strong>);
+    lastIdx = match.index + match[0].length;
+  }
+
+  if (lastIdx < text.length) {
+    parts.push(text.slice(lastIdx));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
 // Landing Page Component
 function LandingPage({ onStartLearning }) {
   return (
@@ -1114,9 +1249,7 @@ function App() {
                   </span>
                 </div>
                 <div className="message-content">
-                  {msg.content.split('\n').map((line, i) => (
-                    <p key={i}>{line}</p>
-                  ))}
+                  {renderMarkdown(msg.content)}
                 </div>
               </div>
             ))}

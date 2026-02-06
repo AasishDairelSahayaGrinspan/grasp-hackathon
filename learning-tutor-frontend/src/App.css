@@ -1904,18 +1904,6 @@ body {
   overflow: auto;
 }
 
-.output-panel-full .output-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--panel-border);
-}
-
-.output-panel-full .output-content {
-  padding: 1rem;
-}
-
 /* ========================================
    FULLSCREEN CHAT PAGE
    ======================================== */
@@ -1977,3 +1965,92 @@ body {
     align-items: center;
   }
 }
+
+/* ========================================
+   MARKDOWN CODE BLOCKS
+   ======================================== */
+
+.code-block {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--code-bg);
+  border: 1px solid var(--panel-border);
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: var(--soft-bg);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.code-language {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.code-block-content {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--app-text);
+  background: var(--code-bg);
+}
+
+.code-block-content code {
+  font-family: inherit;
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Inline code */
+.inline-code {
+  display: inline;
+  padding: 0.15rem 0.4rem;
+  margin: 0 0.1rem;
+  border-radius: 4px;
+  background: var(--code-bg);
+  border: 1px solid var(--panel-border);
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-size: 0.85em;
+  color: var(--accent);
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .code-block {
+  background: #1a1a1a;
+  border-color: #3f3f3f;
+}
+
+[data-theme="dark"] .code-block-header {
+  background: #2a2a2a;
+  border-bottom-color: #3f3f3f;
+}
+
+[data-theme="dark"] .code-block-content {
+  background: #1a1a1a;
+  color: #e6e6e6;
+}
+
+[data-theme="dark"] .inline-code {
+  background: #2a2a2a;
+  border-color: #3f3f3f;
+  color: #10a37f;
+}
+
+/* Syntax highlighting colors (basic) */
+.code-block-content .keyword { color: #c678dd; }
+.code-block-content .string { color: #98c379; }
+.code-block-content .comment { color: #5c6370; }
+.code-block-content .number { color: #d19a66; }
+.code-block-content .function { color: #61afef; }
