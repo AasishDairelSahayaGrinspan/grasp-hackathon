@@ -83,7 +83,7 @@ app.use('/run', runRoutes);
 app.use('/analyze-image', analyzeImageRoutes);
 
 // Catch all handler: send back React's index.html file for client-side routing
-app.get('*', (req, res) => {
+app.get('{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
