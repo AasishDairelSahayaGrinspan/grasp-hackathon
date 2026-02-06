@@ -14,7 +14,7 @@ Both frontend and backend now run together in a single Render Web Service, just 
    - **Name:** `grasp-hackathon` (or your choice)
    - **Root Directory:** `learning-tutor-backend`
    - **Runtime:** Node
-   - **Build Command:** `npm install`
+   - **Build Command:** `npm install && npm run build`
    - **Start Command:** `npm start`
 
 3. **Environment Variables:**
