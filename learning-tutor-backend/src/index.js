@@ -94,15 +94,15 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ============================================================
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║     🎓 Learning-First AI Coding Tutor - Backend Server       ║
 ╠══════════════════════════════════════════════════════════════╣
-║  Server running on: http://localhost:${PORT}                    ║
-║  Health check:      http://localhost:${PORT}/health             ║
-║  Analyze endpoint:  POST http://localhost:${PORT}/analyze       ║
-║  Run code:          POST http://localhost:${PORT}/run           ║
+║  Server running on: http://0.0.0.0:${PORT}                    ║
+║  Health check:      http://0.0.0.0:${PORT}/health             ║
+║  Analyze endpoint:  POST http://0.0.0.0:${PORT}/analyze       ║
+║  Run code:          POST http://0.0.0.0:${PORT}/run           ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Remember: We NEVER give complete code solutions!            ║
 ║  We help students LEARN by thinking, not copying.            ║
