@@ -632,6 +632,10 @@ function App() {
   const [editorWidth, setEditorWidth] = useState(420);
   const [isResizing, setIsResizing] = useState(false);
 
+  // Output panel resizable state
+  const [outputHeight, setOutputHeight] = useState(150);
+  const [isResizingOutput, setIsResizingOutput] = useState(false);
+
   // Timer control state
   const [showTimer, setShowTimer] = useState(true);
   const [timerRunning, setTimerRunning] = useState(false); // Timer doesn't start automatically
@@ -716,9 +720,42 @@ function App() {
     };
   }, [isResizing]);
 
+  // Handle output panel vertical resize
+  useEffect(() => {
+    const handleOutputMouseMove = (e) => {
+      if (!isResizingOutput) return;
+      const editorSidebar = document.querySelector('.editor-sidebar');
+      if (editorSidebar) {
+        const rect = editorSidebar.getBoundingClientRect();
+        const newHeight = Math.max(80, Math.min(400, rect.bottom - e.clientY));
+        setOutputHeight(newHeight);
+      }
+    };
+
+    const handleOutputMouseUp = () => {
+      setIsResizingOutput(false);
+    };
+
+    if (isResizingOutput) {
+      document.addEventListener('mousemove', handleOutputMouseMove);
+      document.addEventListener('mouseup', handleOutputMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleOutputMouseMove);
+      document.removeEventListener('mouseup', handleOutputMouseUp);
+    };
+  }, [isResizingOutput]);
+
   // Handle resize start
   const handleMouseDown = (e) => {
     setIsResizing(true);
+    e.preventDefault();
+  };
+
+  // Handle output resize start
+  const handleOutputResizeMouseDown = (e) => {
+    setIsResizingOutput(true);
     e.preventDefault();
   };
 
@@ -972,25 +1009,60 @@ function App() {
       // Store the extracted text for context in future questions
       setUploadedImageText(response.extractedText || '');
 
-      // Use the message from backend, or provide a default
-      const messageContent = response.message || (
-        response.extractedText
-          ? 'Got it! I can see the problem. What would you like help with?'
-          : 'I couldn\'t read this image clearly. Try a cleaner screenshot of just the problem text.'
-      );
+      // Check if it's code - if so, show the analysis directly
+      if (response.isCode && response.analysis) {
+        // Build a proper response for code analysis
+        const codeAnalysis = response.analysis;
+        let messageContent = '';
 
-      const assistantMsg = {
-        role: 'assistant',
-        content: `[Image received] ${messageContent}`,
-        timestamp: new Date()
-      };
+        if (codeAnalysis.reply) {
+          messageContent = codeAnalysis.reply;
+        } else if (response.message) {
+          messageContent = response.message;
+        } else {
+          messageContent = `I found ${response.language || 'some'} code in your screenshot. What would you like me to help you with?`;
+        }
 
-      setChatMessages(prev => [...prev, assistantMsg]);
+        // If code was detected and we have it, also update the editor
+        if (response.extractedText && response.language) {
+          // Optionally set the code in editor
+          const detectedLang = response.language === 'cpp' ? 'cpp' :
+                              response.language === 'javascript' ? 'python' :
+                              response.language;
+          if (['python', 'c', 'cpp', 'java'].includes(detectedLang)) {
+            setLanguage(detectedLang);
+            setCode(response.extractedText);
+          }
+        }
+
+        const assistantMsg = {
+          role: 'assistant',
+          content: `📷 **Code detected in image!**\n\n${messageContent}`,
+          timestamp: new Date()
+        };
+
+        setChatMessages(prev => [...prev, assistantMsg]);
+      } else {
+        // For problem statements, show message and wait for user question
+        const messageContent = response.message || (
+          response.extractedText
+            ? 'Got it! I can see the problem. What would you like help with?'
+            : 'I couldn\'t read this image clearly. Try a cleaner screenshot.'
+        );
+
+        const assistantMsg = {
+          role: 'assistant',
+          content: `📷 **Image received!**\n\n${messageContent}`,
+          timestamp: new Date()
+        };
+
+        setChatMessages(prev => [...prev, assistantMsg]);
+      }
     } catch (err) {
       console.error('Image upload error:', err);
       const errorMsg = {
         role: 'assistant',
-        content: `Hmm, I had trouble with that image. ${err.message}\n\nTips for better results:\n• Crop to show only the problem statement\n• Make sure text is clear and readable\n• Avoid capturing browser UI elements`,
+        content: `Hmm, I had trouble with that image. ${err.message}\n\nTips for better results:\n• Make sure text/code is clear and readable\n• Crop to show only the relevant content\n• Ensure good contrast and lighting`,
         timestamp: new Date(),
         isError: true
       };
@@ -1159,7 +1231,7 @@ function App() {
             </div>
           </div>
 
-          <div className="editor-wrapper">
+          <div className="editor-wrapper" style={{ flex: showOutput ? `1 1 auto` : '1' }}>
             <Editor
               height="100%"
               language={LANGUAGES.find(l => l.value === language)?.monacoId}
@@ -1177,6 +1249,42 @@ function App() {
             />
           </div>
 
+          {/* Code Output Panel - Above Footer, Resizable */}
+          {showOutput && (
+            <div className="output-panel-container" style={{ height: outputHeight }}>
+              <div className="output-panel">
+                <div className="output-header">
+                  <h3>Output</h3>
+                  <button className="close-output" onClick={() => setShowOutput(false)}>✕</button>
+                </div>
+                <div className={`output-content ${codeOutput?.status || ''}`}>
+                  {codeOutput?.status === 'running' && (
+                    <div className="output-running">Running code...</div>
+                  )}
+                  {codeOutput?.status === 'success' && (
+                    <>
+                      <pre className="output-text">{codeOutput.output || '(No output)'}</pre>
+                      <div className="output-meta">✓ Executed in {codeOutput.executionTime}ms</div>
+                    </>
+                  )}
+                  {codeOutput?.status === 'error' && (
+                    <>
+                      {codeOutput.output && <pre className="output-text">{codeOutput.output}</pre>}
+                      <pre className="output-error">{codeOutput.error}</pre>
+                    </>
+                  )}
+                </div>
+              </div>
+              {/* Resize Handle at bottom */}
+              <div
+                className={`output-resize-handle ${isResizingOutput ? 'active' : ''}`}
+                onMouseDown={handleOutputResizeMouseDown}
+              >
+                <div className="output-resize-line"></div>
+              </div>
+            </div>
+          )}
+
           <div className="editor-footer">
             <div className="editor-actions">
               <button
@@ -1193,33 +1301,6 @@ function App() {
               </div>
             </div>
           </div>
-
-          {/* Code Output Panel */}
-          {showOutput && (
-            <div className="output-panel">
-              <div className="output-header">
-                <h3>Output</h3>
-                <button className="close-output" onClick={() => setShowOutput(false)}>✕</button>
-              </div>
-              <div className={`output-content ${codeOutput?.status || ''}`}>
-                {codeOutput?.status === 'running' && (
-                  <div className="output-running">Running code...</div>
-                )}
-                {codeOutput?.status === 'success' && (
-                  <>
-                    <pre className="output-text">{codeOutput.output || '(No output)'}</pre>
-                    <div className="output-meta">✓ Executed in {codeOutput.executionTime}ms</div>
-                  </>
-                )}
-                {codeOutput?.status === 'error' && (
-                  <>
-                    {codeOutput.output && <pre className="output-text">{codeOutput.output}</pre>}
-                    <pre className="output-error">{codeOutput.error}</pre>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
         </aside>
 
         {/* Resize Handle */}
