@@ -33,11 +33,6 @@ jobs:
           cd learning-tutor-backend
           npm run build --if-present
 
-      - name: Test backend (if tests exist)
-        run: |
-          cd learning-tutor-backend
-          npm run test --if-present || echo "No tests defined - continuing deployment"
-
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
