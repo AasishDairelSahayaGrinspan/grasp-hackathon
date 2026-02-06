@@ -66,6 +66,21 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API landing page - shows available endpoints
+app.get('/', (req, res) => {
+  res.status(200).json({
+    service: "Learning-First AI Coding Tutor API",
+    status: "running",
+    endpoints: {
+      health: "GET /health",
+      analyze: "POST /analyze",
+      run: "POST /run",
+      "analyze-image": "POST /analyze-image"
+    },
+    note: "Use POST endpoints with JSON body"
+  });
+});
+
 // Main analyze endpoint - the AI brain lives here
 app.use('/analyze', analyzeRoutes);
 
