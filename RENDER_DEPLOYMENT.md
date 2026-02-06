@@ -1,40 +1,49 @@
 # Render Deployment Guide
 
-## Deploy to Render (Frontend + Backend)
+## Deploy to Render (Frontend + Backend Together)
 
-### Backend Deployment (Already Done)
-- **Service:** `grasp-hackathon` (Web Service)
-- **URL:** `https://grasp-hackathon.onrender.com`
-- **Root Directory:** `learning-tutor-backend`
-- **Build Command:** `npm install`
-- **Start Command:** `npm start`
+### Unified Deployment (Recommended)
+Both frontend and backend now run together in a single Render Web Service, just like local development!
 
-### Frontend Deployment (New)
-
-1. **Create New Render Service:**
+1. **Create Render Web Service:**
    - Go to [Render Dashboard](https://dashboard.render.com)
-   - Click **New** → **Static Site**
+   - Click **New** → **Web Service**
    - Connect your GitHub repo
 
 2. **Configure Build Settings:**
-   - **Name:** `learning-tutor-frontend`
-   - **Root Directory:** `learning-tutor-frontend`
-   - **Build Command:** `npm install && npm run build`
-   - **Publish Directory:** `dist`
+   - **Name:** `grasp-hackathon` (or your choice)
+   - **Root Directory:** `learning-tutor-backend`
+   - **Runtime:** Node
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
 
-3. **Deploy:**
-   - Click **Create Static Site**
-   - Render will build and deploy automatically
+3. **Environment Variables:**
+   - **GROQ_API_KEY:** Your Groq API key
+   - **NODE_ENV:** production
+
+4. **Deploy:**
+   - Click **Create Web Service**
+   - Render will build the frontend, copy it to backend, and start the server
+
+### What Happens During Build:
+1. `npm install` installs backend dependencies
+2. `npm run build` builds the frontend and copies to `frontend/` directory
+3. Server starts and serves both frontend (static files) and backend (API)
 
 ### URLs After Deployment:
-- **Backend API:** `https://grasp-hackathon.onrender.com`
-- **Frontend App:** `https://learning-tutor-frontend.onrender.com`
+- **Full App:** `https://your-service-name.onrender.com`
+- **API Health:** `https://your-service-name.onrender.com/health`
+- **API Endpoints:** `https://your-service-name.onrender.com/analyze`
 
 ### Testing:
-1. **Backend:** Visit `https://grasp-hackathon.onrender.com/health`
-2. **Frontend:** Visit your frontend URL and test the app
+1. **Visit the main URL** - you should see the React app
+2. **Check API health:** `/health` endpoint
+3. **Test the app** - paste code and get AI tutoring!
 
-### Notes:
-- Frontend automatically connects to backend via API calls
-- No CORS issues since both are on Render
-- Free tier available for both services
+### Benefits:
+- ✅ **Single service** - simpler deployment
+- ✅ **No CORS issues** - both run on same domain
+- ✅ **Just like local dev** - frontend and backend together
+- ✅ **Free tier available**
+
+**This is the cleanest setup - one service, everything works together!** 🎉

@@ -14,6 +14,7 @@ const cors = require('cors');
 const analyzeRoutes = require('./routes/analyze');
 const runRoutes = require('./routes/run');
 const analyzeImageRoutes = require('./routes/analyzeImage');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +35,9 @@ app.use(cors({
 
 // Parse JSON request bodies
 app.use(express.json());
+
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Request logging middleware (helpful for debugging)
 app.use((req, res, next) => {
@@ -77,6 +81,11 @@ app.use('/run', runRoutes);
 
 // Image analysis endpoint - problem screenshots
 app.use('/analyze-image', analyzeImageRoutes);
+
+// Catch all handler: send back React's index.html file for client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
 
 // ============================================================
 // ERROR HANDLING
