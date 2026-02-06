@@ -32,6 +32,12 @@ app.use(cors({
     if (origin.startsWith('vscode-webview://')) {
       return callback(null, true);
     }
+    if (origin.includes('azurestaticapps.net')) {
+      return callback(null, true);
+    }
+    if (origin.includes('onrender.com')) {
+      return callback(null, true);
+    }
     return callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST'],
