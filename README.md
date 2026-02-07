@@ -30,8 +30,6 @@ Whether you're struggling with a syntax error in Python, a logic bug in C++, or 
 *   **💬 Interactive Chat Interface**: Have a natural conversation about your code. Ask follow-up questions and get instant feedback.
 *   **💻 Professional Code Editor**: Integrated Monaco Editor (VS Code engine) with syntax highlighting for Python, C, C++, and Java.
 *   **📷 Visual Problem Helper**: Upload screenshots of coding problems or errors. The AI extracts text (OCR) and provides targeted help.
-*   **🔊 Voice Explanations**: Audio support for explanations, perfect for auditory learners.
-*   **📈 Progress Tracking**: Keep track of your learning journey with session timers and question metrics.
 *   **🌓 Dark/Light Mode**: Beautiful, responsive UI that adapts to your preference.
 
 ---
