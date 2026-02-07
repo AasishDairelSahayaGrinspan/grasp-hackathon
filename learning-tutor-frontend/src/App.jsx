@@ -1239,28 +1239,9 @@ function App() {
             />
           </div>
 
-
-
-          <div className="editor-footer">
-            <div className="editor-actions">
-              <button
-                className="run-button"
-                onClick={handleRunCode}
-                disabled={running || backendStatus !== 'connected'}
-              >
-                {running ? '⏳ Running...' : '▶ Run Code'}
-              </button>
-              <div className="stats">
-                <span>{code.length} chars</span>
-                <span>•</span>
-                <span>{code.split('\n').length} lines</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Code Output Panel - Below Footer */}
+          {/* Code Output Panel - Above Footer, Resizable */}
           {showOutput && (
-            <div className="output-panel-container" style={{ height: outputHeight, flexShrink: 0, borderTop: 'none', borderBottom: '1px solid var(--panel-border)' }}>
+            <div className="output-panel-container" style={{ height: outputHeight }}>
               <div className="output-panel">
                 <div className="output-header">
                   <h3>Output</h3>
@@ -1284,7 +1265,7 @@ function App() {
                   )}
                 </div>
               </div>
-              {/* Resize Handle at TOP of output since it's at bottom? Or keep bottom? Keeping bottom for now or maybe user wants it resizable from top? Usually bottom panels resize from top. But user said "static above", if output is scrollable, maybe resize handle is not needed or should be top. Existing handle is bottom. I'll keep it bottom for simplicity unless logic requires top. */}
+              {/* Resize Handle at bottom */}
               <div
                 className={`output-resize-handle ${isResizingOutput ? 'active' : ''}`}
                 onMouseDown={handleOutputResizeMouseDown}
@@ -1293,6 +1274,26 @@ function App() {
               </div>
             </div>
           )}
+
+
+          <div className="editor-footer">
+            <div className="editor-actions">
+              <button
+                className="run-button"
+                onClick={handleRunCode}
+                disabled={running || backendStatus !== 'connected'}
+              >
+                {running ? '⏳ Running...' : '▶ Run Code'}
+              </button>
+              <div className="stats">
+                <span>{code.length} chars</span>
+                <span>•</span>
+                <span>{code.split('\n').length} lines</span>
+              </div>
+            </div>
+          </div>
+
+
         </aside>
 
         {/* Resize Handle */}
