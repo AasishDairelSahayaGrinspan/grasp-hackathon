@@ -838,10 +838,11 @@ body {
   display: flex;
   flex-direction: column;
   border-right: none;
+  flex-shrink: 0;
   min-width: 300px;
   max-width: 700px;
   overflow: hidden;
-  align-self: stretch;
+  height: 100%;
 }
 
 [data-theme="dark"] .editor-sidebar {
@@ -1577,12 +1578,11 @@ body {
 /* Responsive Design */
 @media (max-width: 1200px) {
   .editor-sidebar {
-    height: 400px;
+    min-width: 280px;
   }
 
   .chat-container {
-    height: auto;
-    min-height: 500px;
+    min-height: 400px;
   }
 }
 
