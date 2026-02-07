@@ -1,275 +1,110 @@
 /**
- * Compiler Service
- *
- * Executes code in Python, C, C++, and Java
- * Uses child_process to run compilers safely with timeout
+ * Compiler Service (Piston API Version)
+ * 
+ * Executes code using the Piston Execution API (https://github.com/engineer-man/piston)
+ * This avoids the need for local compilers (gcc, python, etc.) on the Render server.
  */
 
-const { exec } = require('child_process');
-const fs = require('fs').promises;
-const path = require('path');
-const os = require('os');
-const crypto = require('crypto');
-const util = require('util');
+const axios = require('axios');
 
-const execPromise = util.promisify(exec);
+const PISTON_API = 'https://emkc.org/api/v2/piston';
 
-// Execution timeout (5 seconds)
-const EXECUTION_TIMEOUT = 5000;
-
-// Max output size (prevent memory issues)
-const MAX_OUTPUT_SIZE = 10000;
+// Language mapping: Frontend Language -> Piston Language Configuration
+const LANGUAGE_CONFIG = {
+  python: { language: 'python', version: '3.10.0' },
+  c: { language: 'c', version: '10.2.0' },
+  cpp: { language: 'cpp', version: '10.2.0' },
+  java: { language: 'java', version: '15.0.2' },
+  javascript: { language: 'javascript', version: '18.15.0' }
+};
 
 /**
- * Generate a unique temporary directory for code execution
+ * Execute code using Piston API
  */
-async function createTempDir() {
-  const uniqueId = crypto.randomBytes(8).toString('hex');
-  const tempDir = path.join(os.tmpdir(), `code-runner-${uniqueId}`);
-  await fs.mkdir(tempDir, { recursive: true });
-  return tempDir;
-}
-
-/**
- * Clean up temporary directory
- */
-async function cleanupTempDir(tempDir) {
+async function runCode(code, language, input = '') {
   try {
-    await fs.rm(tempDir, { recursive: true, force: true });
-  } catch (err) {
-    console.error('Failed to cleanup temp dir:', err);
-  }
-}
+    const langKey = language.toLowerCase();
+    const config = LANGUAGE_CONFIG[langKey] || LANGUAGE_CONFIG.python; // Default to python
 
-/**
- * Execute a command with timeout
- */
-async function executeCommand(command, options = {}) {
-  try {
-    const { stdout, stderr } = await execPromise(command, {
-      cwd: options.cwd,
-      timeout: EXECUTION_TIMEOUT,
-      maxBuffer: MAX_OUTPUT_SIZE
+    // Java requires the filename to match the class name, but Piston handles basic execution.
+    // However, Piston usually runs "main.extension".
+    // For Java, ensuring the class is "Main" is safest, or Piston runs it anyway if it compiles.
+
+    console.log(`[Compiler] Sending ${config.language} code to Piston API...`);
+
+    const response = await axios.post(`${PISTON_API}/execute`, {
+      language: config.language,
+      version: config.version,
+      files: [
+        {
+          content: code
+        }
+      ],
+      stdin: input,
+      run_timeout: 5000,
+      compile_timeout: 10000
     });
 
+    const { run, compile } = response.data;
+
+    // Handle compilation error
+    if (compile && compile.code !== 0) {
+      return {
+        success: false,
+        stdout: '',
+        stderr: compile.stderr || compile.stdout || 'Compilation failed',
+        exitCode: compile.code,
+        compilationError: true
+      };
+    }
+
+    // Handle runtime result
     return {
-      success: true,
-      stdout: stdout.slice(0, MAX_OUTPUT_SIZE),
-      stderr: stderr.slice(0, MAX_OUTPUT_SIZE),
-      exitCode: 0,
-      timedOut: false
+      success: run.code === 0,
+      stdout: run.stdout,
+      stderr: run.stderr,
+      exitCode: run.code,
+      timedOut: run.signal === 'SIGKILL' // Piston kills process on timeout
     };
+
   } catch (error) {
-    if (error.killed) {
-      return {
-        success: false,
-        stdout: error.stdout || '',
-        stderr: 'Execution timed out (5 second limit)',
-        exitCode: -1,
-        timedOut: true
-      };
+    console.error('[Compiler] Piston API Error:', error.message);
+    if (error.response) {
+      console.error('[Compiler] Response:', error.response.data);
     }
 
-    return {
-      success: false,
-      stdout: error.stdout || '',
-      stderr: error.stderr || error.message,
-      exitCode: error.code || -1,
-      timedOut: false
-    };
-  }
-}
-
-/**
- * Run Python code
- */
-async function runPython(code) {
-  const tempDir = await createTempDir();
-  const filePath = path.join(tempDir, 'main.py');
-
-  try {
-    await fs.writeFile(filePath, code);
-    let result = await executeCommand(`python3 "${filePath}"`, { cwd: tempDir });
-
-    if (!result.success && result.stderr.includes('not found')) {
-      result = await executeCommand(`python "${filePath}"`, { cwd: tempDir });
-    }
-
-    return result;
-  } finally {
-    await cleanupTempDir(tempDir);
-  }
-}
-
-/**
- * Run C code
- */
-async function runC(code) {
-  const tempDir = await createTempDir();
-  const sourcePath = path.join(tempDir, 'main.c');
-  const outputPath = path.join(tempDir, 'main');
-
-  try {
-    await fs.writeFile(sourcePath, code);
-
-    const compileResult = await executeCommand(
-      `gcc "${sourcePath}" -o "${outputPath}" -Wall`,
-      { cwd: tempDir }
-    );
-
-    if (!compileResult.success) {
-      return {
-        success: false,
-        stdout: '',
-        stderr: `Compilation Error:\n${compileResult.stderr}`,
-        exitCode: compileResult.exitCode,
-        compilationError: true
-      };
-    }
-
-    return await executeCommand(`"${outputPath}"`, { cwd: tempDir });
-  } finally {
-    await cleanupTempDir(tempDir);
-  }
-}
-
-/**
- * Run C++ code
- */
-async function runCpp(code) {
-  const tempDir = await createTempDir();
-  const sourcePath = path.join(tempDir, 'main.cpp');
-  const outputPath = path.join(tempDir, 'main');
-
-  try {
-    await fs.writeFile(sourcePath, code);
-
-    const compileResult = await executeCommand(
-      `g++ "${sourcePath}" -o "${outputPath}" -Wall -std=c++17`,
-      { cwd: tempDir }
-    );
-
-    if (!compileResult.success) {
-      return {
-        success: false,
-        stdout: '',
-        stderr: `Compilation Error:\n${compileResult.stderr}`,
-        exitCode: compileResult.exitCode,
-        compilationError: true
-      };
-    }
-
-    return await executeCommand(`"${outputPath}"`, { cwd: tempDir });
-  } finally {
-    await cleanupTempDir(tempDir);
-  }
-}
-
-/**
- * Run Java code
- */
-async function runJava(code) {
-  const tempDir = await createTempDir();
-
-  const classMatch = code.match(/public\s+class\s+(\w+)/);
-  const className = classMatch ? classMatch[1] : 'Main';
-  const sourcePath = path.join(tempDir, `${className}.java`);
-
-  try {
-    await fs.writeFile(sourcePath, code);
-
-    const compileResult = await executeCommand(`javac "${sourcePath}"`, { cwd: tempDir });
-
-    if (!compileResult.success) {
-      return {
-        success: false,
-        stdout: '',
-        stderr: `Compilation Error:\n${compileResult.stderr}`,
-        exitCode: compileResult.exitCode,
-        compilationError: true
-      };
-    }
-
-    return await executeCommand(`java ${className}`, { cwd: tempDir });
-  } finally {
-    await cleanupTempDir(tempDir);
-  }
-}
-
-/**
- * Main function to run code based on language
- */
-async function runCode(code, language) {
-  const lang = language.toLowerCase();
-  console.log(`[Compiler] Running ${lang} code (${code.length} chars)`);
-
-  try {
-    let result;
-
-    switch (lang) {
-      case 'python':
-      case 'py':
-        result = await runPython(code);
-        break;
-      case 'c':
-        result = await runC(code);
-        break;
-      case 'cpp':
-      case 'c++':
-        result = await runCpp(code);
-        break;
-      case 'java':
-        result = await runJava(code);
-        break;
-      default:
-        result = {
-          success: false,
-          stdout: '',
-          stderr: `Unsupported language: ${language}`,
-          exitCode: -1
-        };
-    }
-
-    console.log(`[Compiler] Result: success=${result.success}`);
-    return result;
-  } catch (error) {
-    console.error('[Compiler Service] Error:', error);
     return {
       success: false,
       stdout: '',
-      stderr: `Execution error: ${error.message}`,
+      stderr: 'Failed to execute code via remote compiler service. ' + error.message,
       exitCode: -1
     };
   }
 }
 
 /**
- * Check if compilers are available
+ * Check compilers - For Piston, we just check if API is reachable
  */
 async function checkCompilers() {
-  const compilers = { python: false, c: false, cpp: false, java: false };
-
   try {
-    const pythonCheck = await executeCommand('python3 --version');
-    compilers.python = pythonCheck.success;
-  } catch (e) { compilers.python = false; }
-
-  try {
-    const gccCheck = await executeCommand('gcc --version');
-    compilers.c = gccCheck.success;
-  } catch (e) { compilers.c = false; }
-
-  try {
-    const gppCheck = await executeCommand('g++ --version');
-    compilers.cpp = gppCheck.success;
-  } catch (e) { compilers.cpp = false; }
-
-  try {
-    const javacCheck = await executeCommand('javac -version');
-    compilers.java = javacCheck.success;
-  } catch (e) { compilers.java = false; }
-
-  return compilers;
+    await axios.get(`${PISTON_API}/runtimes`);
+    return {
+      python: true,
+      c: true,
+      cpp: true,
+      java: true,
+      note: 'Using Piston API'
+    };
+  } catch (error) {
+    console.error('Piston API unreachable');
+    return {
+      python: false,
+      c: false,
+      cpp: false,
+      java: false,
+      error: 'Remote compiler unreachable'
+    };
+  }
 }
 
 module.exports = { runCode, checkCompilers };
