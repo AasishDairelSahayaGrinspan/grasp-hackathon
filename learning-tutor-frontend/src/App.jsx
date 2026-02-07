@@ -1227,6 +1227,14 @@ function App() {
           {/* Code Output Panel - Above Footer, Resizable */}
           {showOutput && (
             <div className="output-panel-container" style={{ height: outputHeight }}>
+              {/* Resize Handle at top */}
+              <div
+                className={`output-resize-handle ${isResizingOutput ? 'active' : ''}`}
+                onMouseDown={handleOutputResizeMouseDown}
+              >
+                <div className="output-resize-line"></div>
+              </div>
+
               <div className="output-panel">
                 <div className="output-header">
                   <h3>Output</h3>
@@ -1249,13 +1257,6 @@ function App() {
                     </>
                   )}
                 </div>
-              </div>
-              {/* Resize Handle at bottom */}
-              <div
-                className={`output-resize-handle ${isResizingOutput ? 'active' : ''}`}
-                onMouseDown={handleOutputResizeMouseDown}
-              >
-                <div className="output-resize-line"></div>
               </div>
             </div>
           )}
