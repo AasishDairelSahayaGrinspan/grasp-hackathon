@@ -967,12 +967,13 @@ body {
   overflow: hidden !important;
 }
 
+/* Editor Footer - Fixed at Bottom */
 .editor-footer {
-  padding: 0.75rem 1.25rem;
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+  padding: 0.75rem 1.25rem !important;
   background: var(--sidebar-bg);
   border-top: 1px solid var(--panel-border);
-  flex-shrink: 0;
-  margin-top: auto;
 }
 
 [data-theme="dark"] .editor-footer {
@@ -981,9 +982,10 @@ body {
 }
 
 .editor-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100%;
 }
 
 .run-button {
