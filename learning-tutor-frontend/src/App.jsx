@@ -926,24 +926,7 @@ function App() {
   };
 
   // Quick action buttons with friendly messages
-  const handleQuickAction = (action) => {
-    let message = '';
-    switch (action) {
-      case 'analyze':
-        message = 'Hey, can you analyze my code and tell me if there are any issues?';
-        break;
-      case 'explain':
-        message = 'I want to understand what this code does. Can you walk me through it?';
-        break;
-      case 'hint':
-        message = 'I\'m stuck! Give me a hint about what might be wrong here.';
-        break;
-      case 'logic':
-        message = 'Help me understand the logic and flow of this code. How does it actually work?';
-        break;
-    }
-    setUserMessage(message);
-  };
+
 
   // Run code handler
   const handleRunCode = async () => {
@@ -1350,30 +1333,7 @@ function App() {
           <div className="chat-input-area">
             <div className="input-controls">
               <div className="actions-menu">
-                <select
-                  className="action-select"
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value) {
-                      if (value === 'upload') {
-                        const fileInput = document.getElementById('image-upload-input');
-                        if (fileInput) {
-                          fileInput.value = '';
-                          fileInput.click();
-                        }
-                      } else {
-                        handleQuickAction(value);
-                      }
-                      e.target.selectedIndex = 0;
-                    }
-                  }}
-                  disabled={loading || backendStatus !== 'connected'}
-                >
-                  <option value="">Quick Actions</option>
-                  <option value="analyze">Analyze Code</option>
-                  <option value="explain">Explain Logic</option>
-                  <option value="hint">Get Hint</option>
-                </select>
+
                 <button
                   className="upload-btn"
                   onClick={() => {

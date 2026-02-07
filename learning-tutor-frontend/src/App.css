@@ -1419,29 +1419,7 @@ body {
   position: relative;
 }
 
-.action-select {
-  padding: 0.5rem 0.75rem;
-  border: 1.5px solid var(--panel-border);
-  border-radius: 8px;
-  background: var(--panel-bg);
-  color: var(--app-text);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  outline: none;
-  min-width: 160px;
-}
 
-.action-select:hover:not(:disabled) {
-  border-color: var(--accent);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
-}
-
-.action-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 
 .upload-btn {
   padding: 0.5rem 0.75rem;
