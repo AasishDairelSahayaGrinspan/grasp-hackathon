@@ -1395,22 +1395,13 @@ function App() {
                   style={{ display: 'none' }}
                 />
               </div>
-              {uploadedImageName && (
-                <div className="upload-badge">
-                  {imageUploading ? Icons.loader : Icons.check} {uploadedImageName}
-                </div>
-              )}
             </div>
 
             <div className="input-row">
               <textarea
                 ref={messageInputRef}
                 value={userMessage}
-                onChange={(e) => {
-                  setUserMessage(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
-                }}
+                onChange={(e) => setUserMessage(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Ask me anything about your code..."
                 className="message-input"
