@@ -771,6 +771,7 @@ body {
   flex: 1;
   height: calc(100vh - 48px);
   overflow: hidden;
+  align-items: stretch;
 }
 
 /* Resize Handle */
@@ -843,6 +844,7 @@ body {
   max-width: 700px;
   height: 100%;
   overflow: hidden;
+  align-self: stretch;
 }
 
 [data-theme="dark"] .editor-sidebar {
@@ -955,6 +957,9 @@ body {
 
 .editor-wrapper {
   flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
   min-height: 0;
   overflow: hidden;
 }
