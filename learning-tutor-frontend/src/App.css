@@ -1198,6 +1198,7 @@ body {
   flex-direction: column;
   gap: 0;
   background: var(--chat-bg);
+  min-height: 0;
 }
 
 .message {
@@ -1364,7 +1365,8 @@ body {
 .chat-input-area {
   padding: 1rem 2rem 1.5rem;
   background: var(--chat-bg);
-  border-top: none;
+  border-top: 1px solid var(--panel-border);
+  flex-shrink: 0;
 }
 
 /* Input Controls */
