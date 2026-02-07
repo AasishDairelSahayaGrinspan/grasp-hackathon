@@ -840,7 +840,8 @@ body {
   flex-shrink: 0;
   min-width: 300px;
   max-width: 700px;
-  overflow-y: auto;
+  overflow: hidden;
+  /* Changed from overflow-y: auto - footer must stay fixed */
 }
 
 [data-theme="dark"] .editor-sidebar {
@@ -954,7 +955,8 @@ body {
 .editor-wrapper {
   flex: 1;
   overflow: hidden;
-  min-height: 100px;
+  min-height: 0;
+  /* Critical for flex children to shrink properly */
 }
 
 .editor-footer {
@@ -1098,7 +1100,7 @@ body {
   padding: 0.75rem 1rem;
   overflow-y: auto;
   flex: 1;
-  max-height: 120px;
+  max-height: 200px;
 }
 
 .output-running {
