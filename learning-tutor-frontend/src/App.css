@@ -1137,10 +1137,9 @@ body {
 .chat-container {
   display: flex;
   flex-direction: column;
-  background: var(--chat-bg);
-  flex: 1;
-  min-width: 0;
   height: 100%;
+  overflow: hidden;
+  /* Prevent container itself from scrolling */
 }
 
 .chat-header {
