@@ -1,0 +1,13 @@
+# Render Configuration for Learning Tutor Backend
+# Uses Docker to include Java, GCC, G++ for code execution
+
+services:
+  - type: web
+    name: learning-tutor-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
