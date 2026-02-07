@@ -767,10 +767,10 @@ body {
 /* Main Container - Resizable Layout */
 .main-container {
   display: flex;
+  flex-direction: row;
   flex: 1;
   height: calc(100vh - 48px);
   overflow: hidden;
-  align-items: stretch;
 }
 
 /* Resize Handle */
@@ -838,11 +838,11 @@ body {
   display: flex;
   flex-direction: column;
   border-right: none;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   min-width: 300px;
   max-width: 700px;
-  overflow: hidden;
   height: 100%;
+  overflow: hidden;
 }
 
 [data-theme="dark"] .editor-sidebar {
@@ -954,10 +954,9 @@ body {
 }
 
 .editor-wrapper {
-  flex: 1;
-  overflow: hidden;
+  flex: 1 1 0;
   min-height: 0;
-  /* Critical for flex children to shrink properly */
+  overflow: hidden;
 }
 
 .editor-footer {
@@ -1195,7 +1194,7 @@ body {
 
 /* Chat Messages - ChatGPT Style */
 .chat-messages {
-  flex: 1;
+  flex: 1 1 0;
   overflow-y: auto;
   padding: 0;
   display: flex;
