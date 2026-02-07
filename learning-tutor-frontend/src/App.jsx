@@ -1221,7 +1221,7 @@ function App() {
             </div>
           </div>
 
-          <div className="editor-wrapper" style={{ flex: 1 }}>
+          <div className="editor-wrapper" style={{ flex: 1, minHeight: 0 }}>
             <Editor
               height="100%"
               language={LANGUAGES.find(l => l.value === language)?.monacoId}
