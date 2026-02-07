@@ -9,5 +9,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: OPENAI_API_KEY
+      - key: GROQ_API_KEY
         sync: false
+      - key: AI_MODEL
+        value: llama-3.3-70b-versatile
