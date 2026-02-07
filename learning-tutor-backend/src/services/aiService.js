@@ -489,33 +489,8 @@ function getGenericHint(hintLevel) {
 function sanitizeResponse(response) {
   let sanitized = { ...response };
 
-  if (sanitized.reply) {
-    // DON'T remove code blocks - we want syntax examples!
-    // Only check if a response contains suspiciously complete code
-
-    // Patterns that indicate COMPLETE solutions (not just syntax hints)
-    const completeSolutionPatterns = [
-      // Complete function with actual logic (not blanks)
-      /def \w+\([^)]*\):\s*\n(\s+.+\n){5,}/g,  // Python function with 5+ lines
-      /function \w+\([^)]*\)\s*\{[\s\S]{200,}\}/g,  // JS function with lots of code
-      /public\s+(static\s+)?\w+\s+\w+\([^)]*\)\s*\{[\s\S]{200,}\}/g,  // Java method
-    ];
-
-    let hasCompleteSolution = false;
-    for (const pattern of completeSolutionPatterns) {
-      if (pattern.test(sanitized.reply)) {
-        hasCompleteSolution = true;
-        break;
-      }
-    }
-
-    // Only sanitize if we detect a complete solution
-    if (hasCompleteSolution) {
-      sanitized.reply = sanitized.reply.replace(/```[\s\S]*?```/g,
-        '```\n[Complete solution removed - try writing it yourself!]\n```');
-    }
-  }
-
+  // Sanitizer disabled to allow better code explanations for loops and examples
+  // We trust the system prompt to guide the AI not to give direct homework answers
   return sanitized;
 }
 

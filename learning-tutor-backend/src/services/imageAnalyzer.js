@@ -12,12 +12,12 @@ const MAX_TEXT_LENGTH = 3000;
 
 // UI elements to completely remove (very aggressive filtering)
 const UI_NOISE_EXACT = [
-  // LeetCode specific
-  'leetcode', 'problemlist', 'submit', 'register', 'login', 'premium',
-  'description', 'editorial', 'solutions', 'submissions', 'code',
+  // LeetCode specific (Removed 'leetcode', 'description', 'code' to allow context)
+  'problemlist', 'submit', 'register', 'login', 'premium',
+  'editorial', 'solutions', 'submissions',
   'auto', 'testcase', 'test result', 'accepted', 'wrong answer',
-  'topics', 'companies', 'hint', 'online', 'run', 'console',
-  'acceptance rate', 'constraints', 'topics', 'hint1', 'hint2', 'hint3',
+  'online', 'console',
+  'acceptance rate', 'hint1', 'hint2', 'hint3',
   // Browser/UI
   'chrome', 'firefox', 'safari', 'bookmark', 'tab', 'tabs',
   // Common noise

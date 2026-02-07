@@ -9,7 +9,7 @@
 const express = require('express');
 const multer = require('multer');
 const { extractTextFromImage } = require('../services/imageAnalyzer');
-const { analyzeWithAI } = require('../services/aiService');
+const { analyzeCode } = require('../services/aiService');
 
 const router = express.Router();
 const upload = multer({
@@ -60,7 +60,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       console.log('[analyze-image] Detected code in image, auto-analyzing...');
 
       try {
-        const analysis = await analyzeWithAI({
+        const analysis = await analyzeCode({
           code: extractedText,
           language: detectedLanguage || 'python',
           level: 'moderate',
@@ -94,7 +94,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     if (hasProblemContent) {
       // Try to get AI to summarize/understand the problem
       try {
-        const analysis = await analyzeWithAI({
+        const analysis = await analyzeCode({
           code: '',
           language: 'python',
           level: 'moderate',
