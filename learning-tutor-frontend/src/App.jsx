@@ -1206,26 +1206,29 @@ function App() {
         <aside className="editor-sidebar" style={{ width: editorWidth }}>
           <div className="editor-header">
             <h2>Code Editor</h2>
-            <div className="language-buttons">
-              {LANGUAGES.map(lang => (
-                <button
-                  key={lang.value}
-                  className={`lang-btn ${language === lang.value ? 'active' : ''}`}
-                  onClick={() => handleLanguageChange(lang.value)}
-                  title={lang.label}
+            <div className="editor-controls">
+              <div className="language-selector">
+                <span className="selected-lang-icon">{LanguageIcons[language]}</span>
+                <select
+                  value={language}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  className="language-select"
                 >
-                  <span className="lang-icon">{LanguageIcons[lang.value]}</span>
-                  <span className="lang-name">{lang.label}</span>
-                </button>
-              ))}
+                  {LANGUAGES.map(lang => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                className="run-button header-run-btn"
+                onClick={handleRunCode}
+                disabled={running || backendStatus !== 'connected'}
+              >
+                {running ? '⏳ Running...' : '▶ Run Code'}
+              </button>
             </div>
-            <button
-              className="run-button header-run-btn"
-              onClick={handleRunCode}
-              disabled={running || backendStatus !== 'connected'}
-            >
-              {running ? '⏳ Running...' : '▶ Run Code'}
-            </button>
           </div>
 
           <div className="editor-wrapper" style={{ flex: 1 }}>
