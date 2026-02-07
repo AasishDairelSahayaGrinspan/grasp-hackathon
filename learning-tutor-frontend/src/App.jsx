@@ -320,21 +320,13 @@ const FEATURES = [
     title: 'Interactive Chat',
     description: 'Have a natural conversation with your AI tutor. Ask questions, get hints, and learn at your own pace.'
   },
-  {
-    icon: 'volume',
-    title: 'Voice Explanations',
-    description: 'Listen to explanations with our text-to-speech feature. Perfect for auditory learners.'
-  },
+
   {
     icon: 'globe',
     title: 'Multi-Language Support',
     description: 'Learn Python, C, C++, and Java with language-specific guidance and best practices.'
   },
-  {
-    icon: 'trendingUp',
-    title: 'Progress Tracking',
-    description: 'Track your learning journey with detailed statistics on questions asked and time spent.'
-  },
+
   {
     icon: 'rocket',
     title: 'Step-by-Step Guidance',
@@ -579,7 +571,7 @@ function LandingPage({ onStartLearning }) {
       {/* CTA Section */}
       <section className="cta-section">
         <h2>Ready to Learn Coding the Right Way?</h2>
-        <p>Join thousands of learners who are building real programming skills with CodeMentorAI.</p>
+
         <button className="cta-button primary large" onClick={onStartLearning}>
           Launch Tutor
           <span className="arrow">→</span>
