@@ -964,6 +964,9 @@ body {
   background: var(--sidebar-bg);
   border-top: 1px solid var(--panel-border);
   flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 [data-theme="dark"] .editor-footer {
@@ -1141,7 +1144,7 @@ body {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  /* Prevent container itself from scrolling */
+  position: relative;
 }
 
 .chat-header {
@@ -1362,12 +1365,15 @@ body {
   }
 }
 
-/* Chat Input Area - ChatGPT Style */
+/* Chat Input Area - Fixed at Bottom */
 .chat-input-area {
   padding: 1rem 2rem 1.5rem;
   background: var(--chat-bg);
   border-top: 1px solid var(--panel-border);
   flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 /* Input Controls */

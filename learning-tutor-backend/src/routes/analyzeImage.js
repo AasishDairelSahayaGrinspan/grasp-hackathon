@@ -1,21 +1,31 @@
 /**
- * Analyze Image Route
+ * Analyze Image Route - Uses AI Vision
  *
- * POST /analyze-image - Analyze a screenshot (problem or code) and return extracted text
- * For code screenshots, automatically provides analysis
- * For problem screenshots, extracts clean problem statement
+ * POST /analyze-image - Analyze a screenshot using AI Vision (Groq)
+ * Much more reliable than OCR for understanding code and problems
  */
 
 const express = require('express');
 const multer = require('multer');
-const { extractTextFromImage } = require('../services/imageAnalyzer');
-const { analyzeCode } = require('../services/aiService');
+const OpenAI = require('openai');
 
 const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
+
+// Initialize Groq client for vision
+let groqClient = null;
+if (process.env.GROQ_API_KEY) {
+  groqClient = new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: 'https://api.groq.com/openai/v1'
+  });
+  console.log('[Image Analyzer] Groq Vision client initialized');
+} else {
+  console.log('[Image Analyzer] No GROQ_API_KEY - image analysis will not work');
+}
 
 router.post('/', upload.single('image'), async (req, res) => {
   console.log('[analyze-image] Request received');
@@ -36,97 +46,121 @@ router.post('/', upload.single('image'), async (req, res) => {
       mimetype: req.file.mimetype
     });
 
-    // Extract text from image (now returns object with isCode flag)
-    const result = await extractTextFromImage(req.file.buffer);
-
-    // Handle both old string format and new object format
-    const extractedText = typeof result === 'string' ? result : result.text;
-    const isCode = typeof result === 'object' ? result.isCode : false;
-    const detectedLanguage = typeof result === 'object' ? result.language : null;
-
-    if (!extractedText || extractedText.length < 10) {
-      console.log('[analyze-image] Could not extract meaningful text');
-      return res.json({
+    if (!groqClient) {
+      console.log('[analyze-image] No Groq client available');
+      return res.status(500).json({
+        error: 'AI Vision not configured',
         extractedText: '',
-        isCode: false,
-        message: 'I couldn\'t read the content from this image clearly.\n\n**Tips for better results:**\n• Crop the screenshot to show only the problem or code\n• Make sure the text is clear and not blurry\n• Avoid capturing browser tabs, buttons, or menus\n\nTry uploading a cleaner screenshot!'
+        message: 'Image analysis is not configured. Please set up the GROQ_API_KEY.'
       });
     }
 
-    console.log('[analyze-image] Successfully extracted text, length:', extractedText.length, 'isCode:', isCode);
+    // Convert image to base64
+    const base64Image = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype || 'image/png';
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-    // If it's code, automatically analyze it
-    if (isCode) {
-      console.log('[analyze-image] Detected code in image, auto-analyzing...');
+    console.log('[analyze-image] Sending to AI Vision...');
 
-      try {
-        const analysis = await analyzeCode({
-          code: extractedText,
-          language: detectedLanguage || 'python',
-          level: 'moderate',
-          hintLevel: 1,
-          userQuestion: 'Please analyze this code from the screenshot. Explain what it does, identify any errors or bugs, and provide guidance on fixing issues.',
-          conversationHistory: []
-        });
+    // Use Groq Vision to analyze the image
+    const response = await groqClient.chat.completions.create({
+      model: 'llama-3.2-90b-vision-preview',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Analyze this image. If it contains code, explain what the code does and identify any bugs or issues. If it contains a programming problem (like from LeetCode), summarize what the problem is asking and suggest an approach to solve it.
 
-        return res.json({
-          extractedText: extractedText,
-          isCode: true,
-          language: detectedLanguage,
-          message: analysis.reply || 'I found code in your image! Here\'s my analysis...',
-          analysis: analysis
-        });
-      } catch (aiError) {
-        console.error('[analyze-image] AI analysis failed:', aiError);
-        return res.json({
-          extractedText: extractedText,
-          isCode: true,
-          language: detectedLanguage,
-          message: `I found ${detectedLanguage || ''} code in your image. What would you like help with?\n\n• Explain what this code does\n• Find bugs or errors\n• Help improve it`
-        });
+Be helpful and provide complete explanations. Format your response nicely with:
+- **Headers** for sections
+- Code blocks with \`\`\` for any code examples
+- Clear step-by-step explanations
+
+Start your response with either "📝 **Code Analysis:**" if it's code, or "📋 **Problem:**" if it's a problem statement.`
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: dataUrl
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.3
+    });
+
+    const aiResponse = response.choices[0]?.message?.content || '';
+    console.log('[analyze-image] AI response received, length:', aiResponse.length);
+
+    // Determine if it's code or a problem based on AI response
+    const isCode = aiResponse.includes('Code Analysis') ||
+      aiResponse.toLowerCase().includes('this code') ||
+      aiResponse.toLowerCase().includes('function') ||
+      aiResponse.toLowerCase().includes('def ') ||
+      aiResponse.toLowerCase().includes('class ');
+
+    return res.json({
+      extractedText: aiResponse,
+      isCode: isCode,
+      message: aiResponse,
+      analysis: {
+        reply: aiResponse
       }
-    }
-
-    // For problem statements - provide a clean summary
-    // Check if we extracted a meaningful problem
-    const hasProblemContent = /\b(given|return|find|array|string|input|output|example)\b/i.test(extractedText);
-
-    if (hasProblemContent) {
-      // Try to get AI to summarize/understand the problem
-      try {
-        const analysis = await analyzeCode({
-          code: '',
-          language: 'python',
-          level: 'moderate',
-          hintLevel: 1,
-          userQuestion: `I uploaded a problem screenshot. Here's the extracted text:\n\n"${extractedText}"\n\nPlease briefly summarize what this problem is asking (2-3 sentences max), then ask what kind of help I need.`,
-          conversationHistory: []
-        });
-
-        return res.json({
-          extractedText: extractedText,
-          isCode: false,
-          message: analysis.reply || 'Got it! I can see the problem. What would you like help with?',
-          analysis: analysis
-        });
-      } catch (aiError) {
-        console.error('[analyze-image] AI summary failed:', aiError);
-      }
-    }
-
-    // Default response for problem statements
-    res.json({
-      extractedText: extractedText,
-      isCode: false,
-      message: 'Got it! I can see the problem from your screenshot.\n\n**How can I help?**\n• Explain what the problem is asking\n• Give hints on how to approach it\n• Help you understand the examples\n\nJust ask!'
     });
 
   } catch (error) {
     console.error('[analyze-image] Error:', error);
+
+    // Check if it's a model error
+    if (error.message?.includes('model')) {
+      // Try fallback model
+      try {
+        console.log('[analyze-image] Trying fallback model...');
+        const base64Image = req.file.buffer.toString('base64');
+        const mimeType = req.file.mimetype || 'image/png';
+        const dataUrl = `data:${mimeType};base64,${base64Image}`;
+
+        const response = await groqClient.chat.completions.create({
+          model: 'llama-3.2-11b-vision-preview',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Analyze this image. If it's code, explain it. If it's a problem, summarize it. Be helpful and give complete explanations.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: { url: dataUrl }
+                }
+              ]
+            }
+          ],
+          max_tokens: 1500,
+          temperature: 0.3
+        });
+
+        const aiResponse = response.choices[0]?.message?.content || '';
+        return res.json({
+          extractedText: aiResponse,
+          isCode: false,
+          message: aiResponse,
+          analysis: { reply: aiResponse }
+        });
+      } catch (fallbackError) {
+        console.error('[analyze-image] Fallback also failed:', fallbackError);
+      }
+    }
+
     res.status(500).json({
       error: 'Failed to analyze image',
       extractedText: '',
-      message: 'Something went wrong while reading the image. Please try again with a different screenshot.'
+      message: 'Hmm, I had trouble with that image. Failed to analyze image\n\nTips for better results:\n• Make sure text/code is clear and readable\n• Crop to show only the relevant content\n• Ensure good contrast and lighting'
     });
   }
 });
