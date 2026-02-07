@@ -94,24 +94,25 @@ router.post('/', upload.single('image'), async (req, res) => {
 **CRITICAL RULES based on content type:**
 
 🚫 **IF it's a Competitive Programming Problem (LeetCode, GeeksforGeeks, etc.):**
-- Do NOT provide the complete solution code
+- Do NOT provide the complete solution code.
 - Instead, explain:
   - What the problem is asking
   - The key insight or trick needed
-  - The approach/algorithm to use (e.g., "Use a sliding window" or "This is a dynamic programming problem")
-  - Time and space complexity of the approach
-  - Maybe show ONLY the syntax/pattern of the technique (like "the general structure of a DP solution") but NOT the actual solution
-- This helps the student LEARN rather than just copy
+  - The LOGIC and algorithm (e.g., "Use a sliding window")
+  - Time and space complexity
+  - Show SYNTAX TEMPLATES and PSEUDOCODE only.
+- This helps the student LEARN rather than just copy.
 
 ✅ **IF it's a Code Snippet that someone wrote:**
-- Fully explain what the code does
-- Point out any bugs or issues
-- Suggest improvements
-- Walk through the logic step by step
+- Fully explain what the code does.
+- Point out bugs or issues logically.
+- Suggest improvements using SYNTAX HINTS.
+- Do NOT rewrite the entire code for them.
+- Walk through the logic step by step.
 
 Format your response with:
 - **Headers** for sections
-- Code blocks with \`\`\` for syntax examples (but NOT full solutions for problems)
+- Code blocks with \`\`\` for SYNTAX TEMPLATES and PSEUDOCODE
 - Clear explanations
 
 Start your response with:
