@@ -1,13 +1,15 @@
 # Use Node.js base image with additional compilers
 FROM node:20-bookworm
 
-# Install Java (OpenJDK), GCC, G++, and Python
+# Install Java (OpenJDK), GCC, G++, Python, and Tesseract OCR
 RUN apt-get update && apt-get install -y \
     openjdk-17-jdk \
     gcc \
     g++ \
     python3 \
     python3-pip \
+    tesseract-ocr \
+    libtesseract-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Java environment
