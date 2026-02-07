@@ -841,7 +841,7 @@ body {
   min-width: 300px;
   max-width: 700px;
   overflow: hidden;
-  /* Changed from overflow-y: auto - footer must stay fixed */
+  height: 100%;
 }
 
 [data-theme="dark"] .editor-sidebar {
@@ -964,9 +964,7 @@ body {
   background: var(--sidebar-bg);
   border-top: 1px solid var(--panel-border);
   flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
+  margin-top: auto;
 }
 
 [data-theme="dark"] .editor-footer {
@@ -1371,9 +1369,7 @@ body {
   background: var(--chat-bg);
   border-top: 1px solid var(--panel-border);
   flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
+  margin-top: auto;
 }
 
 /* Input Controls */
