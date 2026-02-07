@@ -317,9 +317,17 @@ body {
   border-radius: 50%;
 }
 
-.dot.red { background: #ff5f56; }
-.dot.yellow { background: #ffbd2e; }
-.dot.green { background: #27c93f; }
+.dot.red {
+  background: #ff5f56;
+}
+
+.dot.yellow {
+  background: #ffbd2e;
+}
+
+.dot.green {
+  background: #27c93f;
+}
 
 .file-name {
   margin-left: 0.5rem;
@@ -796,6 +804,18 @@ body {
   opacity: 1;
 }
 
+/* Disable pointer events during resize to prevent cross-panel detection */
+.resize-handle.active~.chat-container,
+.main-container.resizing .chat-container,
+.main-container.resizing .editor-sidebar {
+  pointer-events: none;
+  user-select: none;
+}
+
+.main-container.resizing {
+  cursor: col-resize;
+}
+
 @media (max-width: 900px) {
   .main-container {
     flex-direction: column;
@@ -820,6 +840,7 @@ body {
   flex-shrink: 0;
   min-width: 300px;
   max-width: 700px;
+  overflow-y: auto;
 }
 
 [data-theme="dark"] .editor-sidebar {
@@ -1190,6 +1211,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1292,7 +1314,7 @@ body {
   font-size: 0.875rem;
 }
 
-.message-content :not(pre) > code {
+.message-content :not(pre)>code {
   background: var(--code-bg);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
@@ -1325,9 +1347,13 @@ body {
 }
 
 @keyframes bounce {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: scale(0);
   }
+
   40% {
     transform: scale(1);
   }
@@ -1606,6 +1632,7 @@ body {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -1736,6 +1763,7 @@ body {
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2092,8 +2120,22 @@ body {
 }
 
 /* Syntax highlighting colors (basic) */
-.code-block-content .keyword { color: #c678dd; }
-.code-block-content .string { color: #98c379; }
-.code-block-content .comment { color: #5c6370; }
-.code-block-content .number { color: #d19a66; }
-.code-block-content .function { color: #61afef; }
+.code-block-content .keyword {
+  color: #c678dd;
+}
+
+.code-block-content .string {
+  color: #98c379;
+}
+
+.code-block-content .comment {
+  color: #5c6370;
+}
+
+.code-block-content .number {
+  color: #d19a66;
+}
+
+.code-block-content .function {
+  color: #61afef;
+}
