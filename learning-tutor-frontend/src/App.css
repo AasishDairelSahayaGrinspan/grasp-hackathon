@@ -765,13 +765,15 @@ body {
 }
 
 /* Main Container - Resizable Layout */
+/* Main Container - Resizable Layout */
 .main-container {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  height: calc(100vh - 48px);
-  overflow: hidden;
-  align-items: stretch;
+  display: flex !important;
+  flex-direction: row !important;
+  height: calc(100vh - 48px) !important;
+  width: 100vw !important;
+  overflow: hidden !important;
+  position: relative !important;
+  align-items: stretch !important;
 }
 
 /* Resize Handle */
@@ -834,17 +836,18 @@ body {
 }
 
 /* Editor Sidebar - ChatGPT Style */
+/* Editor Sidebar - ChatGPT Style */
 .editor-sidebar {
-  background: var(--sidebar-bg);
-  display: flex;
-  flex-direction: column;
-  border-right: none;
-  flex: 0 0 auto;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  flex: 0 0 auto !important;
+  overflow: hidden !important;
+  border-right: 1px solid var(--panel-border) !important;
+  background: var(--sidebar-bg) !important;
+  align-self: stretch !important;
   min-width: 300px;
   max-width: 700px;
-  height: 100%;
-  overflow: hidden;
-  align-self: stretch;
 }
 
 [data-theme="dark"] .editor-sidebar {
@@ -956,12 +959,12 @@ body {
 }
 
 .editor-wrapper {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  min-height: 0;
-  overflow: hidden;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
 .editor-footer {
@@ -1005,6 +1008,12 @@ body {
 .run-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.header-run-btn {
+  margin-left: auto;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
 }
 
 .stats {
@@ -1142,13 +1151,15 @@ body {
 }
 
 /* Chat Container - ChatGPT Style */
+/* Chat Container - ChatGPT Style */
 .chat-container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  position: relative !important;
+  min-width: 300px !important;
 }
 
 .chat-header {
@@ -1198,15 +1209,16 @@ body {
 }
 
 /* Chat Messages - ChatGPT Style */
+/* Chat Messages - ChatGPT Style */
 .chat-messages {
-  flex: 1 1 0;
-  overflow-y: auto;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  background: var(--chat-bg);
-  min-height: 0;
+  flex: 1 !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  background: var(--chat-bg) !important;
+  min-height: 0 !important;
 }
 
 .message {
@@ -1370,12 +1382,12 @@ body {
 }
 
 /* Chat Input Area - Fixed at Bottom */
+/* Chat Input Area - Fixed at Bottom */
 .chat-input-area {
-  padding: 1rem 2rem 1.5rem;
-  background: var(--chat-bg);
-  border-top: 1px solid var(--panel-border);
-  flex-shrink: 0;
-  margin-top: auto;
+  flex-shrink: 0 !important;
+  padding: 1rem 2rem 1.5rem !important;
+  background: var(--chat-bg) !important;
+  border-top: 1px solid var(--panel-border) !important;
 }
 
 /* Input Controls */
