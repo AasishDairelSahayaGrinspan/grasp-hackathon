@@ -770,6 +770,7 @@ body {
   flex: 1;
   height: calc(100vh - 48px);
   overflow: hidden;
+  align-items: stretch;
 }
 
 /* Resize Handle */
@@ -1140,6 +1141,7 @@ body {
 .chat-container {
   display: flex;
   flex-direction: column;
+  flex: 1;
   height: 100%;
   overflow: hidden;
   position: relative;
