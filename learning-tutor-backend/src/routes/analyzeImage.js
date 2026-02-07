@@ -84,14 +84,39 @@ router.post('/', upload.single('image'), async (req, res) => {
               content: [
                 {
                   type: 'text',
-                  text: `Analyze this image. If it contains code, explain what the code does and identify any bugs or issues. If it contains a programming problem (like from LeetCode), summarize what the problem is asking and suggest an approach to solve it.
+                  text: `Analyze this image carefully.
 
-Be helpful and provide complete explanations. Format your response nicely with:
+**FIRST, determine what type of content this is:**
+1. **Competitive Programming Problem** - From sites like LeetCode, GeeksforGeeks, HackerRank, Codeforces, etc. These show problem statements with constraints, examples, and expected inputs/outputs.
+2. **Code Snippet/Program** - Actual code that someone wrote and wants explained.
+3. **Other** - Diagrams, algorithms, or educational content.
+
+**CRITICAL RULES based on content type:**
+
+🚫 **IF it's a Competitive Programming Problem (LeetCode, GeeksforGeeks, etc.):**
+- Do NOT provide the complete solution code
+- Instead, explain:
+  - What the problem is asking
+  - The key insight or trick needed
+  - The approach/algorithm to use (e.g., "Use a sliding window" or "This is a dynamic programming problem")
+  - Time and space complexity of the approach
+  - Maybe show ONLY the syntax/pattern of the technique (like "the general structure of a DP solution") but NOT the actual solution
+- This helps the student LEARN rather than just copy
+
+✅ **IF it's a Code Snippet that someone wrote:**
+- Fully explain what the code does
+- Point out any bugs or issues
+- Suggest improvements
+- Walk through the logic step by step
+
+Format your response with:
 - **Headers** for sections
-- Code blocks with \`\`\` for any code examples
-- Clear step-by-step explanations
+- Code blocks with \`\`\` for syntax examples (but NOT full solutions for problems)
+- Clear explanations
 
-Start your response with either "📝 **Code Analysis:**" if it's code, or "📋 **Problem:**" if it's a problem statement.`
+Start your response with:
+- "📋 **Problem Analysis:**" if it's a competitive programming problem
+- "📝 **Code Explanation:**" if it's code to explain`
                 },
                 {
                   type: 'image_url',
